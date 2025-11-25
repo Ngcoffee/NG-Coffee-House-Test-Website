@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NG's Coffee — GTM Test Shop</title>
+  <!-- INSERT GTM HEAD SNIPPET HERE (replace GTM-XXXX with your container ID) -->
+  <!-- Example: <script>...GTM-XXXX...</script> -->
+  <style>
+    body{font-family:Inter,system-ui,Arial,Helvetica,sans-serif;margin:0;background:#f7f5f2;color:#222}
+    header{background:#6b4f4f;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+    .brand{font-weight:700;font-size:20px}
+    nav a{color:#fff;margin-left:14px;text-decoration:none}
+    .container{max-width:1000px;margin:28px auto;padding:0 16px}
+    .hero{display:flex;gap:24px;align-items:flex-start}
+    .sidebar{width:260px}
+    .coffee-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+    .card img{width:100%;height:120px;object-fit:cover;border-radius:6px}
+    .btn{display:inline-block;padding:8px 12px;border-radius:6px;background:#6b4f4f;color:#fff;text-decoration:none}
+    .top-right{display:flex;align-items:center;gap:10px}
+    .cart{background:#fff;padding:8px 10px;border-radius:8px;color:#333}
+    .product-title{font-size:20px;margin:0}
+    footer{padding:20px;text-align:center;color:#666}
+    .newsletter input{padding:8px;border-radius:6px;border:1px solid #ddd;margin-right:8px}
+    .mini{font-size:13px;color:#666}
+  </style>
+</head>
+<body>
+  <!-- INSERT GTM BODY SNIPPET HERE (after opening <body>) -->
+  <!-- Example: <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXX" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript> -->
+
+  <header>
+    <div class="brand">NG's Coffee</div>
+    <div class="top-right">
+      <nav>
+        <a href="#about">About</a>
+        <a href="#stores">Stores</a>
+        <a href="#menu">Menu</a>
+      </nav>
+      <div class="cart" id="cartBtn">Cart (<span id="cartCount">0</span>)</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="mainView" class="hero">
+      <aside class="sidebar">
+        <div class="card">
+          <h3 class="mini">Coffee Options</h3>
+          <ul id="coffeeLinks">
+            <!-- populated by JS -->
+          </ul>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3 class="mini">Newsletter</h3>
+          <form id="newsletterForm" class="newsletter">
+            <input type="text" id="nName" placeholder="Your name" required />
+            <input type="email" id="nEmail" placeholder="email@domain.com" required />
+            <button class="btn" type="submit">Subscribe</button>
+            <div id="newsMsg" class="mini"></div>
+          </form>
+        </div>
+      </aside>
+
+      <section style="flex:1">
+        <div id="homeContent">
+          <div class="card">
+            <h2>Welcome to NG's Coffee</h2>
+            <p class="mini">A simple demo shop to test Google Tag Manager events: <strong>page_view</strong>, <strong>view_item</strong>, <strong>add_to_cart</strong>, and <strong>begin_checkout</strong>.</p>
+            <div style="margin-top:10px" class="coffee-list" id="coffeeGrid"></div>
+          </div>
+        </div>
+
+        <div id="productContent" style="display:none"></div>
+
+        <div id="checkoutContent" style="display:none"></div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    NG's Coffee — GTM testing playground • Built for practice
+  </footer>
+
+  <script>
+    // --- CONFIG: coffee items ---
+    const coffees = [
+      {id:'espresso',title:'Classic Espresso',price:150,desc:'Strong, bold espresso shot',img:'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=60'},
+      {id:'latte',title:'Creamy Latte',price:220,desc:'Milk, espresso, smooth texture',img:'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=60'},
+      {id:'cappuccino',title:'Cappuccino',price:230,desc:'Espresso with frothed milk',img:'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=60'},
+      {id:'mocha',title:'Mocha Chocolate',price:260,desc:'Chocolate + espresso + milk',img:'https://images.unsplash.com/photo-1523942839745-784a5a4f6b9b?auto=format&fit=crop&w=800&q=60'}
+    ];
+
+    // --- SIMPLE RENDERING ---
+    const coffeeGrid = document.getElementById('coffeeGrid');
+    const coffeeLinks = document.getElementById('coffeeLinks');
+    const productContent = document.getElementById('productContent');
+    const homeContent = document.getElementById('homeContent');
+    const checkoutContent = document.getElementById('checkoutContent');
+    const cartBtn = document.getElementById('cartBtn');
+    const cartCount = document.getElementById('cartCount');
+
+    function renderHome(){
+      homeContent.style.display='block'; productContent.style.display='none'; checkoutContent.style.display='none';
+      coffeeGrid.innerHTML=''; coffeeLinks.innerHTML='';
+      coffees.forEach(c=>{
+        const el = document.createElement('div'); el.className='card';
+        el.innerHTML = `<img src="${c.img}" alt="${c.title}"><h4>${c.title}</h4><p class=\"mini\">₹ ${c.price}</p><a class=\"btn\" href=\"#product=${c.id}\">View</a>`;
+        coffeeGrid.appendChild(el);
+        const li = document.createElement('li'); li.innerHTML=`<a href="#product=${c.id}">${c.title}</a>`; coffeeLinks.appendChild(li);
+      });
+      pushDL('page_view',{page:'home'});
+    }
+
+    function renderProduct(id){
+      const c = coffees.find(x=>x.id===id);
+      if(!c) return renderHome();
+      homeContent.style.display='none'; productContent.style.display='block'; checkoutContent.style.display='none';
+      productContent.innerHTML = `<div class=\"card\"><img src=\"${c.img}\"/><h3 class=\"product-title\">${c.title}</h3><p class=\"mini\">${c.desc}</p><p class=\"mini\">Price: ₹ ${c.price}</p><button class=\"btn\" id=\"addCart\">Add to cart</button> <a href=\"#\" id=\"backHome\" class=\"mini\">Back to shop</a></div>`;
+      document.getElementById('addCart').addEventListener('click',()=>{ addToCart(c) });
+      document.getElementById('backHome').addEventListener('click',(e)=>{ e.preventDefault(); location.hash = '' });
+      pushDL('view_item',{item_id:c.id,item_name:c.title,price:c.price});
+    }
+
+    function renderCheckout(){
+      homeContent.style.display='none'; productContent.style.display='none'; checkoutContent.style.display='block';
+      const cart = getCart();
+      checkoutContent.innerHTML = `<div class=\"card\"><h3>Checkout</h3><p class=\"mini\">Items in cart: ${cart.length}</p><ul>${cart.map(it=>`<li>${it.title} — ₹${it.price} x ${it.qty}</li>`).join('')}</ul><button class=\"btn\" id=\"beginCheckout\">Begin Checkout</button><div style=\"margin-top:10px\"><a href=\"#\" id=\"backShop\" class=\"mini\">Back to shop</a></div></div>`;
+      document.getElementById('beginCheckout').addEventListener('click',()=>{ beginCheckout(cart) });
+      document.getElementById('backShop').addEventListener('click',(e)=>{ e.preventDefault(); location.hash=''; });
+    }
+
+    // --- CART LOGIC ---
+    function getCart(){
+      return JSON.parse(localStorage.getItem('ng_cart')||'[]');
+    }
+    function saveCart(cart){ localStorage.setItem('ng_cart',JSON.stringify(cart)); updateCartCount(); }
+    function updateCartCount(){ const c = getCart().reduce((s,it)=>s+it.qty,0); cartCount.innerText = c; }
+    function addToCart(item){
+      const cart = getCart();
+      const ex = cart.find(x=>x.id===item.id);
+      if(ex){ ex.qty += 1 } else { cart.push({id:item.id,title:item.title,price:item.price,qty:1}) }
+      saveCart(cart);
+      pushDL('add_to_cart',{items:cart.map(i=>({id:i.id,name:i.title,price:i.price,quantity:i.qty}))});
+      alert('Added to cart');
+    }
+
+    function beginCheckout(cart){
+      pushDL('begin_checkout',{items:cart.map(i=>({id:i.id,name:i.title,price:i.price,quantity:i.qty})),value:cart.reduce((s,i)=>s+i.price*i.qty,0)});
+      alert('Begin checkout event pushed (no real payment)');
+    }
+
+    // --- DATA LAYER helper ---
+    window.dataLayer = window.dataLayer || [];
+    function pushDL(eventName, payload){
+      const obj = Object.assign({event:eventName,timestamp:new Date().toISOString()}, payload||{});
+      window.dataLayer.push(obj);
+      console.log('DL push',obj);
+    }
+
+    // --- Newsletter ---
+    document.getElementById('newsletterForm').addEventListener('submit',(e)=>{
+      e.preventDefault();
+      const name = document.getElementById('nName').value;
+      const email = document.getElementById('nEmail').value;
+      pushDL('newsletter_signup',{name:name,email:email});
+      document.getElementById('newsMsg').innerText='Thanks! Subscribed.';
+      document.getElementById('newsletterForm').reset();
+    });
+
+    // --- Router ---
+    function router(){
+      const h = location.hash || '';
+      if(h.startsWith('#product=')){ const id = h.split('=')[1]; renderProduct(id); }
+      else if(h.startsWith('#checkout')){ renderCheckout(); }
+      else { renderHome(); }
+    }
+
+    window.addEventListener('hashchange',router);
+    cartBtn.addEventListener('click',()=>{ location.hash='#checkout' });
+
+    // initialize
+    updateCartCount(); router();
+
+  </script>
+</body>
+</html>
